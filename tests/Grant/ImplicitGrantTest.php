@@ -115,7 +115,8 @@ class ImplicitGrantTest extends TestCase
             ]
         );
 
-        $this->assertInstanceOf(AuthorizationRequest::class, $grant->validateAuthorizationRequest($request));
+        $request = $grant->validateAuthorizationRequest($request);
+        $this->assertSame('implicit', $request->getGrantTypeId());
     }
 
     public function testValidateAuthorizationRequestRedirectUriArray()
@@ -149,7 +150,8 @@ class ImplicitGrantTest extends TestCase
             ]
         );
 
-        $this->assertInstanceOf(AuthorizationRequest::class, $grant->validateAuthorizationRequest($request));
+        $request = $grant->validateAuthorizationRequest($request);
+        $this->assertSame('implicit', $request->getGrantTypeId());
     }
 
     /**
