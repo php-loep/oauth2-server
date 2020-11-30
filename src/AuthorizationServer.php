@@ -35,6 +35,11 @@ class AuthorizationServer implements EmitterAwareInterface
     protected $enabledGrantTypes = [];
 
     /**
+     * @var RevokeTokenHandler
+     */
+    protected $revokeTokenHandler = null;
+
+    /**
      * @var DateInterval[]
      */
     protected $grantTypeAccessTokenTTL = [];
@@ -204,6 +209,45 @@ class AuthorizationServer implements EmitterAwareInterface
         }
 
         throw OAuthServerException::unsupportedGrantType();
+    }
+
+    /**
+     * Enable the revoke token handler on the server.
+     *
+     * @param RevokeTokenHandler $handler
+     */
+    public function enableRevokeTokenHandler(RevokeTokenHandler $handler)
+    {
+        $handler->setAccessTokenRepository($this->accessTokenRepository);
+        $handler->setClientRepository($this->clientRepository);
+        $handler->setEncryptionKey($this->encryptionKey);
+        $handler->setEmitter($this->getEmitter());
+
+        $this->revokeTokenHandler = $handler;
+    }
+
+    /**
+     * Return an revoke token response.
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface      $response
+     *
+     * @throws OAuthServerException
+     *
+     * @return ResponseInterface
+     */
+    public function respondToRevokeTokenRequest(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        if ($this->revokeTokenHandler !== null) {
+            $revokeResponse = $this->revokeTokenHandler->respondToRevokeTokenRequest($request, $this->getResponseType());
+
+            if ($revokeResponse instanceof ResponseTypeInterface) {
+                return $revokeResponse->generateHttpResponse($response);
+            }
+        }
+
+        $errorMessage = 'Token revocation not supported.';
+        throw new OAuthServerException($errorMessage, 3, 'invalid_request', 400);
     }
 
     /**
